@@ -1,11 +1,13 @@
 ---
 name: workspace-exec
-description: Run the same shell command in every repo's worktree of a multi-repo workspace, sequentially, with per-repo headers. Aggregates exit code so any repo failing fails the whole run. Use when the user says "run X across all repos", "exec ... in JIRA-123 worktrees", "build everything in the workspace", or wants to fan out a command across the workspace.
+description: Run the same shell command in every repo of a branch-based workspace, sequentially, with per-repo headers. Aggregates exit code so any repo failing fails the whole run. Use when the user says "run X across all repos", "exec ... in JIRA-123 worktrees", "build everything in the workspace", or wants to fan out a command across a branch-based workspace.
 ---
 
 # workspace-exec
 
-Run a shell command in every worktree of a workspace. Useful for cross-repo `git status`, build, lint, or any per-repo task.
+Run a shell command in every worktree of a branch-based workspace. Useful for cross-repo `git status`, build, lint, or any per-repo task.
+
+This is the general-purpose exec primitive that backs `workspace-test` — `workspace-test` picks the per-repo command and `workspace-exec`-style logic runs it. Keep `workspace-exec` for ad-hoc commands; reach for `workspace-test` when the user means "run the test suites".
 
 ## When to use
 

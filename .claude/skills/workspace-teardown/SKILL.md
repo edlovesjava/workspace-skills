@@ -1,11 +1,13 @@
 ---
 name: workspace-teardown
-description: Tear down a multi-repo worktree workspace once a JIRA branch is merged or abandoned. Refuses to remove worktrees with uncommitted or unpushed work unless --force is given. Use when the user says "teardown workspace", "clean up JIRA-123 worktrees", "remove the workspace for ABC-42", or similar.
+description: Tear down a branch-based workspace (Pattern 4) once a JIRA branch is merged or abandoned. Refuses to remove worktrees with uncommitted or unpushed work unless --force is given. Use when the user says "teardown workspace", "clean up JIRA-123 worktrees", "remove the workspace for ABC-42", or similar.
 ---
 
 # workspace-teardown
 
-Remove every worktree for a workspace branch and delete the per-branch directory under the worktree root. Main clones are left intact.
+Remove every worktree in a branch-based workspace and delete the per-branch directory under the worktree root. Main clones in the root workspace are left intact.
+
+This implements the `workspace:teardown <jira-id>` skill from Pattern 4 of *Managing Claude Code Across Multiple Repositories*: "Clean up worktrees and temporary workspace structure once the work is complete."
 
 ## When to use
 

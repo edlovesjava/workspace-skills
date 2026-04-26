@@ -1,11 +1,13 @@
 ---
 name: workspace-sync
-description: Sync every repo's worktree in a workspace by fetching origin and rebasing the shared branch onto each repo's default branch. Use when the user says "sync workspace", "rebase JIRA-123 against main", "update worktrees", or wants to pull upstream changes into a multi-repo branch.
+description: Sync a branch-based workspace (Pattern 4) by fetching origin and rebasing the shared branch onto each repo's default branch, plus refreshing submodules in submodule mode. Use when the user says "sync workspace", "rebase JIRA-123 against main", "update worktrees", or wants to pull upstream changes into a multi-repo branch.
 ---
 
 # workspace-sync
 
-Bring every worktree in a workspace up to date by rebasing its branch onto the latest upstream default branch.
+Bring every worktree in a branch-based workspace up to date by rebasing its branch onto the latest upstream default branch, and (in submodule mode) refresh submodule pointers in the root workspace.
+
+This implements the `workspace:sync <jira-id>` skill from Pattern 4 of *Managing Claude Code Across Multiple Repositories*: "Rebase or merge latest changes, refresh submodules or directory mappings, and validate that the workspace is still coherent."
 
 ## When to use
 
@@ -21,13 +23,13 @@ Bring every worktree in a workspace up to date by rebasing its branch onto the l
 
 ## What it does
 
-For each repo in the workspace:
-
-1. `git fetch origin` inside the worktree.
-2. `git rebase origin/<default_branch>` on the shared branch.
+1. **Submodule-mode only:** if the workspace has a `ROOT_REPO`, pull the root repo (fast-forward) and re-run `git submodule update --init --recursive --remote` so the manifest reflects upstream submodule changes. New submodules will only be picked up by a follow-up `workspace-init`; sync logs a hint if it sees any.
+2. For each repo in the branch-based workspace:
+   - `git fetch origin` inside the worktree.
+   - `git rebase origin/<default_branch>` on the shared branch.
 3. If a rebase conflicts, stops there with a clear message — the user must resolve and re-run.
 
-This is the multi-repo equivalent of `git pull --rebase` against the upstream main branch.
+This is the multi-repo equivalent of `git pull --rebase` against the upstream main branch, plus the "refresh submodules or directory mappings" step from Pattern 4 of the article.
 
 ## How to invoke
 

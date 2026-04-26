@@ -28,6 +28,12 @@ ws_log "syncing workspace for branch: $JIRA"
 ws_print_summary "$JIRA"
 echo
 
+if [[ -n "${ROOT_REPO:-}" ]]; then
+  ws_log "step 0: refreshing root repo submodules (submodule mode)"
+  ws_refresh_root_submodules
+  echo
+fi
+
 failed=0
 for entry in "${REPOS[@]}"; do
   # shellcheck disable=SC2086

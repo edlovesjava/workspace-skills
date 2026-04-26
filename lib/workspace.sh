@@ -254,6 +254,76 @@ ws_check_clean() { # name jira -> 0 if clean, 1 otherwise
   fi
 }
 
+ws_status_worktree() { # name jira default_branch
+  # Print a one-block status summary for one repo's worktree.
+  local name=$1 jira=$2 base=$3
+  local wt; wt=$(ws_worktree_dir "$jira" "$name")
+  echo "=== $name ==="
+  if [[ ! -d "$wt" ]]; then
+    echo "  (no worktree at $wt)"
+    return 0
+  fi
+  local branch; branch=$(git -C "$wt" rev-parse --abbrev-ref HEAD)
+  echo "  worktree : $wt"
+  echo "  branch   : $branch"
+
+  # Dirty?
+  local dirty_lines; dirty_lines=$(git -C "$wt" status --porcelain | wc -l | tr -d ' ')
+  if [[ "$dirty_lines" -gt 0 ]]; then
+    echo "  dirty    : $dirty_lines uncommitted file(s)"
+  else
+    echo "  dirty    : clean"
+  fi
+
+  # Ahead/behind upstream.
+  local upstream
+  upstream=$(git -C "$wt" rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null || echo "")
+  if [[ -n "$upstream" ]]; then
+    local behind ahead
+    read -r behind ahead < <(git -C "$wt" rev-list --left-right --count "$upstream"...HEAD 2>/dev/null || echo "? ?")
+    echo "  upstream : $upstream (ahead $ahead, behind $behind)"
+  else
+    echo "  upstream : (none)"
+  fi
+
+  # Distance from origin/<default> (the rebase target).
+  if git -C "$wt" rev-parse --verify --quiet "origin/$base" >/dev/null; then
+    local b2 a2
+    read -r b2 a2 < <(git -C "$wt" rev-list --left-right --count "origin/$base"...HEAD 2>/dev/null || echo "? ?")
+    echo "  vs $base   : ahead $a2, behind $b2"
+  fi
+
+  local last
+  last=$(git -C "$wt" log -1 --pretty=format:"%h %s" 2>/dev/null || echo "(no commits)")
+  echo "  last     : $last"
+}
+
+ws_test_cmd_for() { # name -> stdout: command to run, or empty
+  local name=$1
+  # Per-repo override: TEST_CMD_<sanitized-name>. Use printf (no trailing
+  # newline) so 'tr' doesn't translate it into a stray underscore.
+  local sanitized
+  sanitized=$(printf '%s' "$name" | tr -c '[:alnum:]' _)
+  local var="TEST_CMD_$sanitized"
+  local val="${!var:-}"
+  if [[ -n "$val" ]]; then echo "$val"; return; fi
+  echo "${TEST_CMD:-}"
+}
+
+ws_refresh_root_submodules() {
+  # In submodule mode, pull the root and refresh its .gitmodules view so a
+  # later workspace-init picks up newly added submodules.
+  [[ -z "$ROOT_REPO" ]] && return 0
+  local root_dir="$MAIN_CLONES_DIR/_root"
+  if [[ ! -d "$root_dir/.git" ]]; then
+    ws_log "  root repo not yet cloned -- run workspace-init first"
+    return 0
+  fi
+  ws_log "  refreshing root repo + submodules"
+  git -C "$root_dir" pull --ff-only --quiet || ws_log "  warning: root repo pull was not fast-forward; leaving as-is"
+  git -C "$root_dir" submodule update --init --recursive --remote >/dev/null
+}
+
 ws_remove_worktree() { # name jira
   local name=$1 jira=$2
   local main wt
