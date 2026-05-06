@@ -125,6 +125,34 @@ bash .claude/skills/workspace-exec/exec.sh JIRA-123 -- git status -s
 bash .claude/skills/workspace-teardown/teardown.sh JIRA-123
 ```
 
+## Try it in a dev container or Codespace
+
+This repo ships a [`.devcontainer`](.devcontainer/) so you can exercise the
+skills end-to-end without installing anything locally:
+
+- **VS Code locally:** open the repo, run *"Dev Containers: Reopen in Container"*.
+- **GitHub Codespaces:** Code button -> Codespaces tab -> *"Create codespace on this branch"*.
+
+The container is `mcr.microsoft.com/devcontainers/base:bookworm` plus:
+
+- `gh` (GitHub CLI feature)
+- Node.js LTS (so we can `npm install -g`)
+- `@anthropic-ai/claude-code` (the Claude Code CLI itself)
+- `jq`, `shellcheck`
+- VS Code shellcheck extension
+
+You can then run any skill directly, or have Claude Code invoke them:
+
+```bash
+# inside the container, in a scratch dir:
+mkdir -p /tmp/myws && cd /tmp/myws
+bash $REPO/.claude/skills/workspace-init/init.sh JIRA-123 \
+  --repos=foo=https://github.com/owner/foo.git#main,bar=https://github.com/owner/bar.git#main
+```
+
+Authentication note: `claude` and `gh` will both prompt to log in on first
+use. The container does not embed any credentials.
+
 ## Driving via Claude Code
 
 Because each skill has a `SKILL.md` with a `description:`, Claude Code will
