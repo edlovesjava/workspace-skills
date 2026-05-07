@@ -1,13 +1,13 @@
 ---
-name: workspace-init
-description: Initialize a branch-based workspace (Pattern 4) for a shared branch -- typically a JIRA id. Ensures each repo has a main clone under the root workspace, then creates a worktree per repo at <worktree_root>/<branch>/<repo> on a branch named after the JIRA id. Use when the user says "init workspace", "create worktrees for JIRA-123", "set up workspace for ABC-42", or similar.
+name: init
+description: Initialize a branch-based virtual-monorepo workspace for a shared branch -- typically a JIRA id. Ensures each repo has a main clone under the root workspace, then creates a worktree per repo at <worktree_root>/<branch>/<repo> on a branch named after the JIRA id. Use when the user says "init virtual-monorepo", "create worktrees for JIRA-123", "set up workspace for ABC-42", or similar.
 ---
 
-# workspace-init
+# virtual-monorepo:init
 
 Bootstrap a **branch-based workspace** for a shared branch — the per-JIRA subdirectory of worktrees described in Pattern 3 / Pattern 4 of *Managing Claude Code Across Multiple Repositories*. The result is a tree of worktrees, one per repo, all on the same branch, ready for cross-repo work.
 
-This implements the `workspace:init <jira-id>` skill from Pattern 4: "Create the root workspace, attach repositories, create or check out worktrees, fetch latest, and align branches."
+This implements the `virtual-monorepo:init <jira-id>` skill from Pattern 4: "Create the root workspace, attach repositories, create or check out worktrees, fetch latest, and align branches."
 
 ## When to use
 
@@ -49,33 +49,33 @@ The branch-based workspace this produces matches the article's Pattern 3 layout:
 ## How to invoke
 
 ```bash
-bash "$CLAUDE_PROJECT_DIR/.claude/skills/workspace-init/init.sh" <branch> [flags…]
+bash "$CLAUDE_PROJECT_DIR/skills/init/init.sh" <branch> [flags…]
 ```
 
-If `$CLAUDE_PROJECT_DIR` is not set, fall back to a path relative to the current workspace dir (the script lives at `.claude/skills/workspace-init/init.sh` in this repo).
+If `$CLAUDE_PROJECT_DIR` is not set, fall back to a path relative to the current workspace dir (the script lives at `skills/init/init.sh` in this repo).
 
 ## Examples
 
 Manifest mode (uses `.workspace.conf`):
 
 ```bash
-bash .claude/skills/workspace-init/init.sh JIRA-123
+bash skills/init/init.sh JIRA-123
 ```
 
 Submodule mode (no manifest needed):
 
 ```bash
-bash .claude/skills/workspace-init/init.sh JIRA-123 \
+bash skills/init/init.sh JIRA-123 \
   --root=https://github.com/example/orchestration.git
 ```
 
 Inline repos:
 
 ```bash
-bash .claude/skills/workspace-init/init.sh JIRA-123 \
+bash skills/init/init.sh JIRA-123 \
   --repos=service-a=https://github.com/example/service-a.git#main,service-b=https://github.com/example/service-b.git#main
 ```
 
 ## After running
 
-Tell the user the worktree paths and suggest `cd <worktree_root>/<branch>/<repo>` for the repo they want to start in. To align the new branch with upstream changes, follow up with `workspace-sync`. To get a single overview of the branch-based workspace, use `workspace-status`.
+Tell the user the worktree paths and suggest `cd <worktree_root>/<branch>/<repo>` for the repo they want to start in. To align the new branch with upstream changes, follow up with `virtual-monorepo:sync`. To get a single overview of the branch-based workspace, use `virtual-monorepo:status`.

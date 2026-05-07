@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# workspace-status: print a per-repo summary for a branch-based workspace.
+# virtual-monorepo:status: print a per-repo summary for a branch-based workspace.
 #
 # Usage:
 #   status.sh <branch> [--root=URL] [--repos=...] [--workspace-dir=PATH] [--worktree-root=PATH]
@@ -14,7 +14,7 @@ fi
 JIRA=$1; shift
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-LIB="$SCRIPT_DIR/../../../lib/workspace.sh"
+LIB="$SCRIPT_DIR/../../lib/workspace.sh"
 [[ -f "$LIB" ]] || { echo "status.sh: cannot find lib at $LIB" >&2; exit 1; }
 # shellcheck source=/dev/null
 source "$LIB"

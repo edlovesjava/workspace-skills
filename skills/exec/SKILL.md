@@ -1,13 +1,13 @@
 ---
-name: workspace-exec
-description: Run the same shell command in every repo of a branch-based workspace, sequentially, with per-repo headers. Aggregates exit code so any repo failing fails the whole run. Use when the user says "run X across all repos", "exec ... in JIRA-123 worktrees", "build everything in the workspace", or wants to fan out a command across a branch-based workspace.
+name: exec
+description: Run the same shell command in every repo of a branch-based virtual-monorepo workspace, sequentially, with per-repo headers. Aggregates exit code so any repo failing fails the whole run. Use when the user says "run X across all repos", "exec ... in JIRA-123 worktrees", "build everything in the workspace", or wants to fan out a command across a branch-based workspace.
 ---
 
-# workspace-exec
+# virtual-monorepo:exec
 
 Run a shell command in every worktree of a branch-based workspace. Useful for cross-repo `git status`, build, lint, or any per-repo task.
 
-This is the general-purpose exec primitive that backs `workspace-test` — `workspace-test` picks the per-repo command and `workspace-exec`-style logic runs it. Keep `workspace-exec` for ad-hoc commands; reach for `workspace-test` when the user means "run the test suites".
+This is the general-purpose exec primitive that backs `virtual-monorepo:test` — `virtual-monorepo:test` picks the per-repo command and `virtual-monorepo:exec`-style logic runs it. Keep `virtual-monorepo:exec` for ad-hoc commands; reach for `virtual-monorepo:test` when the user means "run the test suites".
 
 ## When to use
 
@@ -20,7 +20,7 @@ This is the general-purpose exec primitive that backs `workspace-test` — `work
 
 - `<branch>` (required, positional): the workspace key.
 - `--` (separator, required): everything after `--` is the command to run.
-- `--root=…` / `--repos=…` / `--workspace-dir=…` / `--worktree-root=…` — same as `workspace-init`.
+- `--root=…` / `--repos=…` / `--workspace-dir=…` / `--worktree-root=…` — same as `virtual-monorepo:init`.
 
 ## What it does
 
@@ -36,15 +36,15 @@ Runs sequentially. Continues through all repos even if one fails, then exits non
 ## How to invoke
 
 ```bash
-bash "$CLAUDE_PROJECT_DIR/.claude/skills/workspace-exec/exec.sh" <branch> [flags…] -- <command>
+bash "$CLAUDE_PROJECT_DIR/skills/exec/exec.sh" <branch> [flags…] -- <command>
 ```
 
 ## Examples
 
 ```bash
-bash .claude/skills/workspace-exec/exec.sh JIRA-123 -- git status -s
-bash .claude/skills/workspace-exec/exec.sh JIRA-123 -- make test
-bash .claude/skills/workspace-exec/exec.sh JIRA-123 --root=https://… -- 'echo "hi from $(basename $PWD)"'
+bash skills/exec/exec.sh JIRA-123 -- git status -s
+bash skills/exec/exec.sh JIRA-123 -- make test
+bash skills/exec/exec.sh JIRA-123 --root=https://… -- 'echo "hi from $(basename $PWD)"'
 ```
 
 ## Notes

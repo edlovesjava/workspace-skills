@@ -1,13 +1,13 @@
 ---
-name: workspace-teardown
-description: Tear down a branch-based workspace (Pattern 4) once a JIRA branch is merged or abandoned. Refuses to remove worktrees with uncommitted or unpushed work unless --force is given. Use when the user says "teardown workspace", "clean up JIRA-123 worktrees", "remove the workspace for ABC-42", or similar.
+name: teardown
+description: Tear down a branch-based virtual-monorepo workspace once a JIRA branch is merged or abandoned. Refuses to remove worktrees with uncommitted or unpushed work unless --force is given. Use when the user says "teardown workspace", "clean up JIRA-123 worktrees", "remove the workspace for ABC-42", or similar.
 ---
 
-# workspace-teardown
+# virtual-monorepo:teardown
 
 Remove every worktree in a branch-based workspace and delete the per-branch directory under the worktree root. Main clones in the root workspace are left intact.
 
-This implements the `workspace:teardown <jira-id>` skill from Pattern 4 of *Managing Claude Code Across Multiple Repositories*: "Clean up worktrees and temporary workspace structure once the work is complete."
+This implements the `virtual-monorepo:teardown <jira-id>` skill from Pattern 4 of *Managing Claude Code Across Multiple Repositories*: "Clean up worktrees and temporary workspace structure once the work is complete."
 
 ## When to use
 
@@ -19,7 +19,7 @@ This implements the `workspace:teardown <jira-id>` skill from Pattern 4 of *Mana
 
 - `<branch>` (required, positional): the workspace key.
 - `--force` (optional): proceed even if some worktree has uncommitted changes or unpushed commits.
-- `--root=…` / `--repos=…` / `--workspace-dir=…` / `--worktree-root=…` — same as `workspace-init`.
+- `--root=…` / `--repos=…` / `--workspace-dir=…` / `--worktree-root=…` — same as `virtual-monorepo:init`.
 
 ## What it does
 
@@ -39,12 +39,12 @@ Branches in the main clones are not deleted automatically — local branches in 
 ## How to invoke
 
 ```bash
-bash "$CLAUDE_PROJECT_DIR/.claude/skills/workspace-teardown/teardown.sh" <branch> [--force] [other flags…]
+bash "$CLAUDE_PROJECT_DIR/skills/teardown/teardown.sh" <branch> [--force] [other flags…]
 ```
 
 ## Examples
 
 ```bash
-bash .claude/skills/workspace-teardown/teardown.sh JIRA-123
-bash .claude/skills/workspace-teardown/teardown.sh JIRA-123 --force
+bash skills/teardown/teardown.sh JIRA-123
+bash skills/teardown/teardown.sh JIRA-123 --force
 ```

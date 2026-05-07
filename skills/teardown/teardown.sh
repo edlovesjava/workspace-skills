@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# workspace-teardown: remove all worktrees for a workspace branch.
+# virtual-monorepo:teardown: remove all worktrees for a workspace branch.
 #
 # Usage:
 #   teardown.sh <branch> [--force] [--root=URL] [--repos=...] [--workspace-dir=PATH] [--worktree-root=PATH]
@@ -23,7 +23,7 @@ for arg in "$@"; do
 done
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-LIB="$SCRIPT_DIR/../../../lib/workspace.sh"
+LIB="$SCRIPT_DIR/../../lib/workspace.sh"
 [[ -f "$LIB" ]] || { echo "teardown.sh: cannot find lib at $LIB" >&2; exit 1; }
 # shellcheck source=/dev/null
 source "$LIB"

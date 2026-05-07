@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# workspace-init: bootstrap a multi-repo worktree workspace for a shared branch.
+# virtual-monorepo:init: bootstrap a multi-repo worktree workspace for a shared branch.
 #
 # Usage:
 #   init.sh <branch> [--root=URL] [--repos=name=url[#branch],...]
@@ -15,7 +15,7 @@ fi
 JIRA=$1; shift
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-LIB="$SCRIPT_DIR/../../../lib/workspace.sh"
+LIB="$SCRIPT_DIR/../../lib/workspace.sh"
 [[ -f "$LIB" ]] || { echo "init.sh: cannot find lib at $LIB" >&2; exit 1; }
 # shellcheck source=/dev/null
 source "$LIB"
@@ -45,4 +45,4 @@ done
 
 echo
 ws_log "done. worktrees live under: $WORKTREE_ROOT/$JIRA"
-ws_log "next: cd into a worktree, or run workspace-sync $JIRA to rebase against default branches."
+ws_log "next: cd into a worktree, or run virtual-monorepo:sync $JIRA to rebase against default branches."

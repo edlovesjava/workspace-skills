@@ -25,6 +25,6 @@ echo
 echo "==> ready."
 echo "    Try the demo: README.md -> 'End-to-end demo flow'."
 echo "    Run a skill directly, e.g.:"
-echo "      bash .claude/skills/workspace-status/status.sh JIRA-123 \\"
+echo "      bash skills/status/status.sh JIRA-123 \\"
 echo "        --workspace-dir=/tmp/myws \\"
 echo "        --repos=foo=https://github.com/owner/foo.git#main"

@@ -1,0 +1,11 @@
+{
+  "name": "virtual-monorepo",
+  "description": "Manage virtual (logical) monorepos: one shared branch across multiple repos, with git worktrees grouped under <worktree_root>/<branch>/<repo>. Implements Pattern 4 of the Managing Claude Code Across Multiple Repositories article -- init, status, sync, test, teardown, and exec skills for branch-based workspaces.",
+  "version": "0.1.0",
+  "author": {
+    "name": "edlovesjava"
+  },
+  "homepage": "https://github.com/edlovesjava/workspace-skills",
+  "license": "MIT",
+  "keywords": ["multi-repo", "monorepo", "worktree", "workspace", "skills"]
+}

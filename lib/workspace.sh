@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Shared library for workspace-* skills.
-# Sourced by .claude/skills/workspace-{init,sync,exec,teardown}/*.sh.
+# Shared library for the virtual-monorepo plugin's skills.
+# Sourced by skills/{init,status,sync,test,exec,teardown}/*.sh.
 #
 # Concepts:
 #   workspace_dir   - common project root (default: $PWD). Holds shared
@@ -312,11 +312,11 @@ ws_test_cmd_for() { # name -> stdout: command to run, or empty
 
 ws_refresh_root_submodules() {
   # In submodule mode, pull the root and refresh its .gitmodules view so a
-  # later workspace-init picks up newly added submodules.
+  # later virtual-monorepo:init picks up newly added submodules.
   [[ -z "$ROOT_REPO" ]] && return 0
   local root_dir="$MAIN_CLONES_DIR/_root"
   if [[ ! -d "$root_dir/.git" ]]; then
-    ws_log "  root repo not yet cloned -- run workspace-init first"
+    ws_log "  root repo not yet cloned -- run virtual-monorepo:init first"
     return 0
   fi
   ws_log "  refreshing root repo + submodules"

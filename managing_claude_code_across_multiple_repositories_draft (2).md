@@ -250,10 +250,11 @@ Building on the above patterns, managing multi-repo workspaces manually is tedio
 
 Define **skills** to encapsulate operations:
 
-- `workspace:init <jira-id>`
-- `workspace:sync <jira-id>`
-- `workspace:exec <jira-id>`
-- `workspace:teardown <jira-id>`
+- `virtual-monorepo:init <jira-id>`
+- `virtual-monorepo:status <jira-id>`
+- `virtual-monorepo:sync <jira-id>`
+- `virtual-monorepo:test <jira-id>`
+- `virtual-monorepo:teardown <jira-id>`
 
 These handle:
 
@@ -262,6 +263,11 @@ These handle:
 - Checking out branches
 - Rebasing and syncing
 - Running cross-repo tasks
+
+A reference implementation is available as the
+[`virtual-monorepo`](https://github.com/edlovesjava/workspace-skills) Claude
+Code plugin, which packages all five skills (plus a general-purpose
+`virtual-monorepo:exec` primitive) for direct install.
 
 ---
 
@@ -297,19 +303,19 @@ For example:
 
 #### Workspace Skills
 
-- `workspace:init <jira-id>`\
+- `virtual-monorepo:init <jira-id>`\
   Create the root workspace, attach repositories, create or check out worktrees, fetch latest, and align branches.
 
-- `workspace:status <jira-id>`\
+- `virtual-monorepo:status <jira-id>`\
   Summarize repository branch state, local changes, outstanding commits, pull request links, CI status, and deployment state.
 
-- `workspace:sync <jira-id>`\
+- `virtual-monorepo:sync <jira-id>`\
   Rebase or merge latest changes, refresh submodules or directory mappings, and validate that the workspace is still coherent.
 
-- `workspace:test <jira-id>`\
+- `virtual-monorepo:test <jira-id>`\
   Run the right mix of unit, integration, REST, UI, and end-to-end tests across the affected repositories.
 
-- `workspace:teardown <jira-id>`\
+- `virtual-monorepo:teardown <jira-id>`\
   Clean up worktrees and temporary workspace structure once the work is complete.
 
 These skills stay intentionally generic. They express the developer’s intent at the workspace level.
@@ -366,7 +372,7 @@ A realistic interaction might look like this:
 
 Claude can then:
 
-1. call `workspace:init PROF-1042`
+1. call `virtual-monorepo:init PROF-1042`
 2. inspect repo state and worktree alignment
 3. use GitHub tooling to check open pull requests and Actions results
 4. use Jira tooling to summarize the work item and acceptance criteria

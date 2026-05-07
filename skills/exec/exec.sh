@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# workspace-exec: run a shell command in every worktree of a workspace.
+# virtual-monorepo:exec: run a shell command in every worktree of a workspace.
 #
 # Usage:
 #   exec.sh <branch> [flags…] -- <command…>
@@ -28,7 +28,7 @@ fi
 CMD="$*"
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-LIB="$SCRIPT_DIR/../../../lib/workspace.sh"
+LIB="$SCRIPT_DIR/../../lib/workspace.sh"
 [[ -f "$LIB" ]] || { echo "exec.sh: cannot find lib at $LIB" >&2; exit 1; }
 # shellcheck source=/dev/null
 source "$LIB"

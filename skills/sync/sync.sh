@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# workspace-sync: fetch + rebase every worktree in a workspace.
+# virtual-monorepo:sync: fetch + rebase every worktree in a workspace.
 #
 # Usage:
 #   sync.sh <branch> [--root=URL] [--repos=...] [--workspace-dir=PATH] [--worktree-root=PATH]
@@ -14,7 +14,7 @@ fi
 JIRA=$1; shift
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-LIB="$SCRIPT_DIR/../../../lib/workspace.sh"
+LIB="$SCRIPT_DIR/../../lib/workspace.sh"
 [[ -f "$LIB" ]] || { echo "sync.sh: cannot find lib at $LIB" >&2; exit 1; }
 # shellcheck source=/dev/null
 source "$LIB"

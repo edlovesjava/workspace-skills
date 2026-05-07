@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# workspace-test: run each repo's configured test command across a branch-based workspace.
+# virtual-monorepo:test: run each repo's configured test command across a branch-based workspace.
 #
 # Usage:
 #   test.sh <branch> [--cmd=DEFAULT] [--root=URL] [--repos=...] [--workspace-dir=PATH] [--worktree-root=PATH]
@@ -24,7 +24,7 @@ for arg in "$@"; do
 done
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-LIB="$SCRIPT_DIR/../../../lib/workspace.sh"
+LIB="$SCRIPT_DIR/../../lib/workspace.sh"
 [[ -f "$LIB" ]] || { echo "test.sh: cannot find lib at $LIB" >&2; exit 1; }
 # shellcheck source=/dev/null
 source "$LIB"

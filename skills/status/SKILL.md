@@ -1,13 +1,13 @@
 ---
-name: workspace-status
-description: Summarise the state of every repo in a branch-based workspace -- current branch, dirty files, ahead/behind upstream, distance from the default branch, and last commit. Use when the user says "status of workspace", "where is JIRA-123", "what's the state across the repos", or wants a single overview of a multi-repo workspace.
+name: status
+description: Summarise the state of every repo in a branch-based virtual-monorepo workspace -- current branch, dirty files, ahead/behind upstream, distance from the default branch, and last commit. Use when the user says "status of workspace", "where is JIRA-123", "what's the state across the repos", or wants a single overview of a multi-repo workspace.
 ---
 
-# workspace-status
+# virtual-monorepo:status
 
-Print a per-repo summary for a branch-based workspace (the directory created by `workspace-init` at `<worktree_root>/<branch>/`). One block per repo, designed to fit on a screen and answer "where am I across the system?".
+Print a per-repo summary for a branch-based workspace (the directory created by `virtual-monorepo:init` at `<worktree_root>/<branch>/`). One block per repo, designed to fit on a screen and answer "where am I across the system?".
 
-This is the `workspace:status <jira-id>` skill from Pattern 4 of the *Managing Claude Code Across Multiple Repositories* article.
+This is the `virtual-monorepo:status <jira-id>` skill from Pattern 4 of the *Managing Claude Code Across Multiple Repositories* article.
 
 ## When to use
 
@@ -35,13 +35,13 @@ It does **not** call out to GitHub or CI yet — those are obvious extensions bu
 ## How to invoke
 
 ```bash
-bash "$CLAUDE_PROJECT_DIR/.claude/skills/workspace-status/status.sh" <branch> [flags…]
+bash "$CLAUDE_PROJECT_DIR/skills/status/status.sh" <branch> [flags…]
 ```
 
 ## Example
 
 ```bash
-bash .claude/skills/workspace-status/status.sh JIRA-123
+bash skills/status/status.sh JIRA-123
 ```
 
 Sample output:
