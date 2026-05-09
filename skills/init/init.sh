@@ -14,9 +14,13 @@ fi
 
 JIRA=$1; shift
 
-SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-LIB="$SCRIPT_DIR/../../lib/workspace.sh"
-[[ -f "$LIB" ]] || { echo "init.sh: cannot find lib at $LIB" >&2; exit 1; }
+if [[ -n "${CLAUDE_PLUGIN_ROOT:-}" ]]; then
+  LIB="$CLAUDE_PLUGIN_ROOT/lib/workspace.sh"
+else
+  SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+  LIB="$SCRIPT_DIR/../../lib/workspace.sh"
+fi
+[[ -f "$LIB" ]] || { echo "$(basename "${BASH_SOURCE[0]}"): cannot find lib at $LIB" >&2; exit 1; }
 # shellcheck source=/dev/null
 source "$LIB"
 

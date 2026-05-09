@@ -1,0 +1,12 @@
+{
+  "name": "workspace-skills",
+  "owner": {
+    "name": "edlovesjava"
+  },
+  "plugins": [
+    {
+      "name": "virtual-monorepo",
+      "source": "."
+    }
+  ]
+}
