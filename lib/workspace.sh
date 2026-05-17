@@ -194,21 +194,71 @@ ws_add_worktree() { # name jira default_branch
 
   if [[ -d "$wt" ]]; then
     ws_log "  worktree exists: $name -> $wt"
+  else
+    mkdir -p "$(dirname "$wt")"
+    git -C "$main" fetch --quiet origin
+
+    if git -C "$main" show-ref --verify --quiet "refs/heads/$jira"; then
+      ws_log "  attaching $name worktree to existing local branch $jira"
+      git -C "$main" worktree add "$wt" "$jira"
+    elif git -C "$main" show-ref --verify --quiet "refs/remotes/origin/$jira"; then
+      ws_log "  attaching $name worktree to origin/$jira"
+      git -C "$main" worktree add -B "$jira" "$wt" "origin/$jira"
+    else
+      ws_log "  creating $name worktree on new branch $jira from origin/$base"
+      git -C "$main" worktree add -b "$jira" "$wt" "origin/$base"
+    fi
+  fi
+
+  # Always ensure the Workspace-Change-Id machinery is in place. Idempotent on
+  # re-runs of init.
+  ws_install_workspace_hook "$name"
+  ws_set_worktree_marker "$name" "$jira"
+}
+
+# Install the prepare-commit-msg hook that stamps Workspace-Change-Id trailers
+# into the main clone's hooks dir. Idempotent: leaves any non-plugin
+# pre-existing hook untouched and only overwrites a previous plugin install.
+# See lib/hooks/prepare-commit-msg.
+ws_install_workspace_hook() { # name
+  local name=$1
+  local main; main=$(ws_main_dir "$name")
+  local hook_dst="$main/.git/hooks/prepare-commit-msg"
+  local marker_line='virtual-monorepo:workspace-change-id-hook'
+
+  if [[ -f "$hook_dst" ]] && ! grep -q "$marker_line" "$hook_dst" 2>/dev/null; then
+    ws_log "  (skipping hook install for $name: pre-existing prepare-commit-msg found)"
     return 0
   fi
-  mkdir -p "$(dirname "$wt")"
-  git -C "$main" fetch --quiet origin
 
-  if git -C "$main" show-ref --verify --quiet "refs/heads/$jira"; then
-    ws_log "  attaching $name worktree to existing local branch $jira"
-    git -C "$main" worktree add "$wt" "$jira"
-  elif git -C "$main" show-ref --verify --quiet "refs/remotes/origin/$jira"; then
-    ws_log "  attaching $name worktree to origin/$jira"
-    git -C "$main" worktree add -B "$jira" "$wt" "origin/$jira"
-  else
-    ws_log "  creating $name worktree on new branch $jira from origin/$base"
-    git -C "$main" worktree add -b "$jira" "$wt" "origin/$base"
+  local plugin_root="${CLAUDE_PLUGIN_ROOT:-}"
+  if [[ -z "$plugin_root" ]]; then
+    plugin_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
   fi
+  local hook_src="$plugin_root/lib/hooks/prepare-commit-msg"
+  if [[ ! -f "$hook_src" ]]; then
+    ws_log "  (warning: hook template missing at $hook_src; skipping)"
+    return 0
+  fi
+
+  cp "$hook_src" "$hook_dst"
+  chmod +x "$hook_dst"
+}
+
+# Drop a per-worktree marker file telling the hook what branch this worktree
+# represents. The hook reads it via `git rev-parse --git-dir`, which returns
+# the per-worktree gitdir inside a worktree (and the main clone's .git inside
+# the main clone), so commits made directly in the main clone are NOT stamped.
+ws_set_worktree_marker() { # name jira
+  local name=$1 jira=$2
+  local wt; wt=$(ws_worktree_dir "$jira" "$name")
+  [[ -d "$wt" ]] || return 0
+
+  # --absolute-git-dir avoids platform quirks: on Windows the plain --git-dir
+  # form returns a C:/... path which trips POSIX absolute-path checks.
+  local gitdir; gitdir=$(git -C "$wt" rev-parse --absolute-git-dir 2>/dev/null) || return 0
+
+  printf '%s\n' "$jira" > "$gitdir/virtual-monorepo-workspace-branch"
 }
 
 ws_sync_worktree() { # name jira default_branch

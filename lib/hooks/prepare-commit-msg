@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# virtual-monorepo:workspace-change-id-hook
+#
+# prepare-commit-msg hook installed by virtual-monorepo:init into each
+# main clone's .git/hooks/. Stamps a `Workspace-Change-Id: <branch>` trailer
+# onto commits made in worktrees the plugin has marked.
+#
+# The marker is a one-line file at:
+#   <worktree-gitdir>/virtual-monorepo-workspace-branch
+# `git rev-parse --git-dir` returns the per-worktree gitdir inside a worktree
+# and the main clone's .git inside the main clone, so this hook stamps
+# *only* commits made from worktrees the plugin set up -- never commits made
+# directly in the main clone, and never commits in worktrees the user
+# created by hand outside the plugin.
+#
+# DESIGN: this script must NEVER abort a commit. Any failure path -> exit 0.
+# See virtual-monorepo:log for the query side.
+
+MSG_FILE=$1
+COMMIT_SOURCE=${2:-}
+
+# Skip merges and squashes -- the trailer already lives on the constituent
+# commits and we don't want to double-stamp the merge commit message.
+case "$COMMIT_SOURCE" in
+  merge|squash) exit 0 ;;
+esac
+
+# Idempotent on amend / rebase reword.
+grep -q "^Workspace-Change-Id:" "$MSG_FILE" 2>/dev/null && exit 0
+
+# --absolute-git-dir avoids the Windows/Git-Bash case where --git-dir alone
+# returns a C:/... path that trips POSIX absolute-path checks.
+gitdir=$(git rev-parse --absolute-git-dir 2>/dev/null) || exit 0
+
+marker="$gitdir/virtual-monorepo-workspace-branch"
+[[ -f "$marker" ]] || exit 0
+
+branch=$(head -n1 "$marker" 2>/dev/null | tr -d '[:space:]')
+[[ -n "$branch" ]] || exit 0
+
+git interpret-trailers --in-place \
+  --trailer "Workspace-Change-Id: $branch" "$MSG_FILE" >/dev/null 2>&1
+exit 0
