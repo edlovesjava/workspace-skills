@@ -20,7 +20,7 @@ jobs:
             lib/workspace.sh \
             lib/hooks/prepare-commit-msg \
             skills/*/*.sh \
-            tests/smoke.sh
+            tests/*.sh
 
   manifests:
     name: manifests parse
@@ -49,9 +49,17 @@ jobs:
           exit $rc
 
   smoke:
-    name: smoke
+    name: smoke (${{ matrix.mode }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - mode: manifest
+            script: tests/smoke.sh
+          - mode: submodule
+            script: tests/smoke-submodule.sh
     steps:
       - uses: actions/checkout@v4
-      - name: End-to-end smoke test
-        run: bash tests/smoke.sh
+      - name: End-to-end smoke test (${{ matrix.mode }} mode)
+        run: bash ${{ matrix.script }}

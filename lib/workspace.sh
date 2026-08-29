@@ -142,18 +142,38 @@ ws_resolve_root_submodules() {
   local gm="$root_dir/.gitmodules"
   [[ -f "$gm" ]] || ws_die "root repo has no .gitmodules"
 
-  local name url branch
-  while IFS= read -r line; do
-    case "$line" in
-      \[submodule*) name=$(echo "$line" | sed -E 's/.*"([^"]+)".*/\1/');;
-      *url*=*) url=$(echo "$line" | sed -E 's/.*=[[:space:]]*//');;
-      *branch*=*) branch=$(echo "$line" | sed -E 's/.*=[[:space:]]*//');;
-    esac
-    if [[ -n "${name:-}" && -n "${url:-}" ]]; then
-      REPOS+=("$name $url ${branch:-main}")
-      name=""; url=""; branch=""
+  # Parse .gitmodules with `git config`, not by hand. It is a git config file,
+  # so git already knows how to read it -- including line ordering, comments,
+  # quoting, and submodule names containing dots or spaces.
+  #
+  # (The previous line-by-line parser emitted a repo the moment it had seen a
+  # name and a url. Git writes `url` before `branch`, so a declared branch was
+  # always read too late to be used, and then leaked onto the next submodule.)
+  local sub_names
+  sub_names=$(git config -f "$gm" --name-only --get-regexp '^submodule\..*\.url$' 2>/dev/null \
+                | sed -e 's/^submodule\.//' -e 's/\.url$//')
+  [[ -n "$sub_names" ]] || ws_die "root repo's .gitmodules declares no submodules"
+
+  local sm url path branch
+  while IFS= read -r sm; do
+    [[ -n "$sm" ]] || continue
+    url=$(git config -f "$gm" --get "submodule.$sm.url" 2>/dev/null || echo "")
+    [[ -n "$url" ]] || continue
+
+    # The submodule's path is its directory, which is the repo name everywhere
+    # else in this plugin. Falls back to the submodule's config name, which is
+    # what git uses when they were never made to differ.
+    path=$(git config -f "$gm" --get "submodule.$sm.path" 2>/dev/null || echo "")
+    [[ -n "$path" ]] || path="$sm"
+
+    branch=$(git config -f "$gm" --get "submodule.$sm.branch" 2>/dev/null || echo "")
+    # `branch = .` is git's shorthand for "same branch as the superproject".
+    if [[ "$branch" == "." ]]; then
+      branch=$(git -C "$root_dir" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
     fi
-  done < "$gm"
+
+    REPOS+=("$path $url ${branch:-main}")
+  done <<< "$sub_names"
 }
 
 # After load + overrides, this should be called to make REPOS usable.

@@ -1,68 +1,24 @@
 #!/usr/bin/env bash
-# End-to-end smoke test for the virtual-monorepo plugin.
+# End-to-end smoke test for the virtual-monorepo plugin, manifest mode.
 #
 # Builds two throwaway bare "origins" in a temp dir, drives every skill
 # against them, and asserts on the observable behaviour. No network, no
 # fixtures checked in -- everything is created and torn down per run.
 #
 #   bash tests/smoke.sh
-#
-# Exits non-zero on the first failed assertion.
 
 set -uo pipefail
 
-PLUGIN_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
-export CLAUDE_PLUGIN_ROOT="$PLUGIN_ROOT"
-
-TMP=$(mktemp -d)
-trap 'rm -rf "$TMP"' EXIT
-
-PASS=0
-FAIL=0
-
-pass() { PASS=$((PASS + 1)); printf '  ok   %s\n' "$1"; }
-fail() { FAIL=$((FAIL + 1)); printf '  FAIL %s\n' "$1"; [[ -n "${2:-}" ]] && printf '         %s\n' "$2"; }
-
-assert_eq() { # want got label
-  if [[ "$1" == "$2" ]]; then pass "$3"; else fail "$3" "want [$1] got [$2]"; fi
-}
-
-assert_contains() { # haystack needle label
-  if [[ "$1" == *"$2"* ]]; then pass "$3"; else fail "$3" "missing [$2]"; fi
-}
-
-assert_not_contains() { # haystack needle label
-  if [[ "$1" != *"$2"* ]]; then pass "$3"; else fail "$3" "unexpectedly found [$2]"; fi
-}
-
-section() { printf '\n== %s ==\n' "$1"; }
-
-skill() { # skill-name args...
-  local s=$1; shift
-  bash "$PLUGIN_ROOT/skills/$s/$s.sh" "$@"
-}
+# shellcheck source=tests/lib.sh
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 
 # ---------------------------------------------------------------------------
 # Fixture: two bare origins + a workspace pointing at them
 # ---------------------------------------------------------------------------
 
-export GIT_CONFIG_GLOBAL="$TMP/gitconfig"
-git config --file "$GIT_CONFIG_GLOBAL" user.email smoke@example.com
-git config --file "$GIT_CONFIG_GLOBAL" user.name "Smoke Test"
-git config --file "$GIT_CONFIG_GLOBAL" init.defaultBranch main
-git config --file "$GIT_CONFIG_GLOBAL" commit.gpgsign false
-
 mkdir -p "$TMP/origins" "$TMP/ws"
 for r in service-a service-b; do
-  git init -q --bare "$TMP/origins/$r.git"
-  git init -q "$TMP/origins/seed-$r"
-  (
-    cd "$TMP/origins/seed-$r" || exit 1
-    echo "$r" > README.md
-    git add -A && git commit -qm "pre-init seed $r"
-    git remote add origin "$TMP/origins/$r.git"
-    git push -q origin main
-  )
+  ws_test_make_origin "$r"
 done
 
 cat > "$TMP/ws/.workspace.conf" <<CONF
@@ -185,6 +141,4 @@ assert_contains "$out" "work in a" "trailer is still queryable after the worktre
 
 # ---------------------------------------------------------------------------
 
-printf '\n%s\n' "-----------------------------"
-printf 'passed: %d   failed: %d\n' "$PASS" "$FAIL"
-[[ "$FAIL" -eq 0 ]] || exit 1
+ws_test_summary

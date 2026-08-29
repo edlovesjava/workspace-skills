@@ -220,7 +220,9 @@ examples/
 ├── manifest-mode/.workspace.conf
 └── submodule-mode/.workspace.conf
 tests/
-└── smoke.sh                          end-to-end test over throwaway origins
+├── lib.sh                            shared assertions + fixture helpers
+├── smoke.sh                          end-to-end test, manifest mode
+└── smoke-submodule.sh                end-to-end test, submodule mode
 docs/
 └── managing-claude-code-...md        the article this implements
 .devcontainer/
@@ -233,16 +235,25 @@ docs/
 ## Development
 
 ```bash
-# End-to-end test: builds two throwaway bare origins in a temp dir, drives
-# every skill against them, asserts on the results, cleans up after itself.
+# Manifest mode: two throwaway bare origins in a temp dir, every skill driven
+# against them, asserted on, cleaned up after.
 bash tests/smoke.sh
 
+# Submodule mode: a throwaway orchestration root repo whose .gitmodules pins
+# submodules to different branches -- covers the ROOT_REPO / --root= path.
+bash tests/smoke-submodule.sh
+
 # Lint (what CI runs)
-shellcheck -S warning lib/workspace.sh lib/hooks/prepare-commit-msg skills/*/*.sh tests/smoke.sh
+shellcheck -S warning lib/workspace.sh lib/hooks/prepare-commit-msg skills/*/*.sh tests/*.sh
 ```
 
+Neither suite touches the network or leaves anything behind; both build their
+fixtures from scratch under `mktemp -d` and use an isolated `GIT_CONFIG_GLOBAL`
+so your own git config can't affect the result. Shared harness lives in
+`tests/lib.sh`.
+
 CI runs shellcheck, validates the plugin/marketplace manifests and every
-skill's frontmatter, and runs the smoke test on each push and pull request.
+skill's frontmatter, and runs both smoke suites on each push and pull request.
 
 ## Configuration reference
 
