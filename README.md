@@ -14,16 +14,45 @@ Workspace Management** from
 
 ## What you get
 
-Six skills, namespaced under the `virtual-monorepo` plugin:
+Seven skills, namespaced under the `virtual-monorepo` plugin:
 
 | Skill | What it does |
 |-------|--------------|
-| **`virtual-monorepo:init`** `<branch>` | Ensure a main clone exists per repo, then add a worktree per repo at `<worktree_root>/<branch>/<repo>` on a branch named `<branch>`. |
+| **`virtual-monorepo:init`** `<branch>` | Ensure a main clone exists per repo, then add a worktree per repo at `<worktree_root>/<branch>/<repo>` on a branch named `<branch>`. Also installs the `Workspace-Change-Id` commit hook. |
 | **`virtual-monorepo:status`** `<branch>` | Per-repo summary: branch, dirty file count, ahead/behind upstream, distance from default branch, last commit. |
 | **`virtual-monorepo:sync`** `<branch>` | In submodule mode: pull root repo and refresh submodule pointers. Then per worktree: `git fetch origin && git rebase origin/<default>`. Stops on first conflict. |
 | **`virtual-monorepo:test`** `<branch>` | Run each repo's configured test command (`TEST_CMD_<repo>` / `TEST_CMD` / `--cmd=`). Repos with no command configured are skipped. |
 | **`virtual-monorepo:exec`** `<branch> -- <cmd>` | Run an arbitrary shell command in every worktree, with per-repo headers and aggregated exit code. The general-purpose primitive that backs `virtual-monorepo:test` for ad-hoc commands. |
+| **`virtual-monorepo:log`** `<branch>` | Show every commit across every repo carrying `Workspace-Change-Id: <branch>` — the unified view of a cross-repo change, queryable forever (works even after branches are deleted). |
 | **`virtual-monorepo:teardown`** `<branch>` | Verify every worktree is clean (no uncommitted / unpushed work), then `git worktree remove` each and drop the per-branch dir. `--force` skips the cleanliness check. |
+
+## Workspace-Change-Id: the cross-repo change as a first-class object
+
+`virtual-monorepo:init` installs a `prepare-commit-msg` hook into each main clone. Every commit you make from a worktree the plugin set up gets a trailer:
+
+```
+Add /auth/sso endpoint
+
+Workspace-Change-Id: JIRA-123
+```
+
+You don't type it — the hook stamps it from a per-worktree marker file. Then `virtual-monorepo:log JIRA-123` greps every repo's history for that trailer and shows the whole cross-repo change as one chronological view:
+
+```
+=== service-shared-lib ===
+  2026-05-16 10:14  9a3c4d2  Add SsoToken type for SSO login flow
+
+=== service-a ===
+  2026-05-16 10:31  4e7f1a8  Add /auth/sso endpoint
+  2026-05-16 11:02  c2b9d56  Wire up SsoToken validation in /auth/sso
+
+=== service-b ===
+  2026-05-16 14:48  7d1ee20  Handle SsoLoggedIn event
+```
+
+The trailer lives inside the commit object itself, so the unified view survives branch deletion, mirroring, and history rewrites. It's the durable name of a cross-repo change.
+
+The hook is defensive: it never aborts a commit, it's idempotent on amends and rebases, it skips merges and squashes, and it only stamps commits from worktrees the plugin marked — so commits made directly in the main clone (or in user-made worktrees) are left alone. If a pre-existing `prepare-commit-msg` is found, init skips the install rather than clobber it.
 
 ## Vocabulary (matches the article)
 
@@ -131,7 +160,10 @@ cd worktrees/JIRA-123/service-a
 # 6. Or run an ad-hoc command across the workspace
 /virtual-monorepo:exec JIRA-123 -- git status -s
 
-# 7. After the PRs merge, clean up
+# 7. See the unified cross-repo change (every commit stamped Workspace-Change-Id: JIRA-123)
+/virtual-monorepo:log JIRA-123
+
+# 8. After the PRs merge, clean up
 /virtual-monorepo:teardown JIRA-123
 ```
 
@@ -146,6 +178,7 @@ bash skills/status/status.sh JIRA-123
 bash skills/sync/sync.sh JIRA-123
 bash skills/test/test.sh JIRA-123
 bash skills/exec/exec.sh JIRA-123 -- git status -s
+bash skills/log/log.sh JIRA-123
 bash skills/teardown/teardown.sh JIRA-123
 ```
 
@@ -175,9 +208,12 @@ skills/
 ├── sync/        SKILL.md + sync.sh
 ├── test/        SKILL.md + test.sh
 ├── exec/        SKILL.md + exec.sh
+├── log/         SKILL.md + log.sh
 └── teardown/    SKILL.md + teardown.sh
 lib/
-└── workspace.sh                      shared bash library (config, git ops)
+├── workspace.sh                      shared bash library (config, git ops)
+└── hooks/
+    └── prepare-commit-msg            stamps Workspace-Change-Id trailers
 examples/
 ├── manifest-mode/.workspace.conf
 └── submodule-mode/.workspace.conf
