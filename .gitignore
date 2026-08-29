@@ -1,0 +1,11 @@
+# Per-machine Claude Code permission cache -- not shareable.
+.claude/settings.local.json
+
+# Artifacts of a workspace rooted in this checkout (see .workspace.conf).
+/.main/
+/worktrees/
+/.workspace.conf
+
+# OS / editor noise
+.DS_Store
+*.swp
