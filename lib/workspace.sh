@@ -206,14 +206,40 @@ ws_add_worktree() { # name jira default_branch
       git -C "$main" worktree add -B "$jira" "$wt" "origin/$jira"
     else
       ws_log "  creating $name worktree on new branch $jira from origin/$base"
-      git -C "$main" worktree add -b "$jira" "$wt" "origin/$base"
+      # --no-track matters: without it the new branch tracks origin/<base>, so
+      # a plain `git push` in the worktree fails and git helpfully suggests
+      # `git push origin HEAD:<base>` -- which would push the feature work
+      # straight onto the default branch. With no upstream, git suggests
+      # `git push --set-upstream origin <jira>` instead, which is correct.
+      git -C "$main" worktree add --no-track -b "$jira" "$wt" "origin/$base"
     fi
   fi
 
   # Always ensure the Workspace-Change-Id machinery is in place. Idempotent on
   # re-runs of init.
+  ws_repair_branch_upstream "$name" "$jira" "$base"
   ws_install_workspace_hook "$name"
   ws_set_worktree_marker "$name" "$jira"
+}
+
+# Repair workspaces created before the --no-track fix, where the workspace
+# branch was left tracking origin/<default>. Deliberately narrow: only acts
+# when the upstream is exactly origin/<base> and the branch is NOT <base>,
+# which is unambiguously the old bug and never a tracking setup anyone would
+# choose. An upstream of origin/<jira> (i.e. the branch has been published) is
+# correct and left alone.
+ws_repair_branch_upstream() { # name jira default_branch
+  local name=$1 jira=$2 base=$3
+  [[ "$jira" == "$base" ]] && return 0
+  local wt; wt=$(ws_worktree_dir "$jira" "$name")
+  [[ -d "$wt" ]] || return 0
+
+  local upstream
+  upstream=$(git -C "$wt" rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null || echo "")
+  if [[ "$upstream" == "origin/$base" ]]; then
+    ws_log "  clearing stale upstream origin/$base on $name ($jira)"
+    git -C "$wt" branch --unset-upstream 2>/dev/null || true
+  fi
 }
 
 # Install the prepare-commit-msg hook that stamps Workspace-Change-Id trailers
@@ -333,7 +359,7 @@ ws_status_worktree() { # name jira default_branch
     read -r behind ahead < <(git -C "$wt" rev-list --left-right --count "$upstream"...HEAD 2>/dev/null || echo "? ?")
     echo "  upstream : $upstream (ahead $ahead, behind $behind)"
   else
-    echo "  upstream : (none)"
+    echo "  upstream : (none -- publish with: git push -u origin $branch)"
   fi
 
   # Distance from origin/<default> (the rebase target).

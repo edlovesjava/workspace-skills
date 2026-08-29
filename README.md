@@ -10,7 +10,7 @@ parallel branches across *all* the repos that need to change together.
 
 This is the reference implementation of **Pattern 4: Agent-Assisted
 Workspace Management** from
-[*Managing Claude Code Across Multiple Repositories*](managing_claude_code_across_multiple_repositories_draft%20%282%29.md).
+[*Managing Claude Code Across Multiple Repositories*](docs/managing-claude-code-across-multiple-repositories.md).
 
 ## What you get
 
@@ -23,7 +23,7 @@ Seven skills, namespaced under the `virtual-monorepo` plugin:
 | **`virtual-monorepo:sync`** `<branch>` | In submodule mode: pull root repo and refresh submodule pointers. Then per worktree: `git fetch origin && git rebase origin/<default>`. Stops on first conflict. |
 | **`virtual-monorepo:test`** `<branch>` | Run each repo's configured test command (`TEST_CMD_<repo>` / `TEST_CMD` / `--cmd=`). Repos with no command configured are skipped. |
 | **`virtual-monorepo:exec`** `<branch> -- <cmd>` | Run an arbitrary shell command in every worktree, with per-repo headers and aggregated exit code. The general-purpose primitive that backs `virtual-monorepo:test` for ad-hoc commands. |
-| **`virtual-monorepo:log`** `<branch>` | Show every commit across every repo carrying `Workspace-Change-Id: <branch>` — the unified view of a cross-repo change, queryable forever (works even after branches are deleted). |
+| **`virtual-monorepo:log`** `<branch>` | Show every commit across every repo carrying `Workspace-Change-Id: <branch>` — the unified view of a cross-repo change, still queryable after the branches are gone. |
 | **`virtual-monorepo:teardown`** `<branch>` | Verify every worktree is clean (no uncommitted / unpushed work), then `git worktree remove` each and drop the per-branch dir. `--force` skips the cleanliness check. |
 
 ## Workspace-Change-Id: the cross-repo change as a first-class object
@@ -50,7 +50,9 @@ You don't type it — the hook stamps it from a per-worktree marker file. Then `
   2026-05-16 14:48  7d1ee20  Handle SsoLoggedIn event
 ```
 
-The trailer lives inside the commit object itself, so the unified view survives branch deletion, mirroring, and history rewrites. It's the durable name of a cross-repo change.
+The trailer lives inside the commit object itself, so the unified view survives branch deletion, mirroring, and forking — once the work has merged, `virtual-monorepo:log JIRA-123` still finds it via the commits now reachable from the default branch. It's the durable name of a cross-repo change.
+
+One caveat worth knowing: `log` searches refs that still exist (`git log --all`). Commits on a branch that was deleted *without* being merged anywhere become unreachable, and git will eventually garbage-collect them — the trailer can't save work that no ref points at.
 
 The hook is defensive: it never aborts a commit, it's idempotent on amends and rebases, it skips merges and squashes, and it only stamps commits from worktrees the plugin marked — so commits made directly in the main clone (or in user-made worktrees) are left alone. If a pre-existing `prepare-commit-msg` is found, init skips the install rather than clobber it.
 
@@ -217,10 +219,30 @@ lib/
 examples/
 ├── manifest-mode/.workspace.conf
 └── submodule-mode/.workspace.conf
+tests/
+└── smoke.sh                          end-to-end test over throwaway origins
+docs/
+└── managing-claude-code-...md        the article this implements
 .devcontainer/
 ├── devcontainer.json
 └── post-create.sh
+.github/workflows/
+└── ci.yml                            shellcheck + manifests + smoke
 ```
+
+## Development
+
+```bash
+# End-to-end test: builds two throwaway bare origins in a temp dir, drives
+# every skill against them, asserts on the results, cleans up after itself.
+bash tests/smoke.sh
+
+# Lint (what CI runs)
+shellcheck -S warning lib/workspace.sh lib/hooks/prepare-commit-msg skills/*/*.sh tests/smoke.sh
+```
+
+CI runs shellcheck, validates the plugin/marketplace manifests and every
+skill's frontmatter, and runs the smoke test on each push and pull request.
 
 ## Configuration reference
 

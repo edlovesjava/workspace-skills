@@ -41,6 +41,7 @@ ws_finalise_repos
 set +e
 
 # --cmd flag wins over conf-level TEST_CMD; per-repo TEST_CMD_<name> still wins over both.
+# shellcheck disable=SC2034  # read indirectly by ws_test_cmd_for in lib/workspace.sh
 [[ -n "$DEFAULT_CMD" ]] && TEST_CMD="$DEFAULT_CMD"
 
 ws_log "test across $JIRA (branch-based workspace at $WORKTREE_ROOT/$JIRA)"

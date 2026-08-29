@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  shellcheck:
+    name: shellcheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install shellcheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+      - name: Lint every shell script
+        run: |
+          shellcheck -S warning \
+            lib/workspace.sh \
+            lib/hooks/prepare-commit-msg \
+            skills/*/*.sh \
+            tests/smoke.sh
+
+  manifests:
+    name: manifests parse
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate plugin + marketplace JSON
+        run: |
+          jq empty .claude-plugin/plugin.json
+          jq empty .claude-plugin/marketplace.json
+      - name: Every skill has name + description frontmatter
+        run: |
+          rc=0
+          for f in skills/*/SKILL.md; do
+            head -n 5 "$f" | grep -q '^name:'        || { echo "$f: missing 'name:' frontmatter"; rc=1; }
+            head -n 5 "$f" | grep -q '^description:' || { echo "$f: missing 'description:' frontmatter"; rc=1; }
+          done
+          exit $rc
+      - name: Every skill dir has a matching script
+        run: |
+          rc=0
+          for d in skills/*/; do
+            s=$(basename "$d")
+            [[ -f "$d/$s.sh" ]] || { echo "$d: expected $s.sh"; rc=1; }
+          done
+          exit $rc
+
+  smoke:
+    name: smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: End-to-end smoke test
+        run: bash tests/smoke.sh
